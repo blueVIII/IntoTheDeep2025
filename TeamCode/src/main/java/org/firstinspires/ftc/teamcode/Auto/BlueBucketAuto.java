@@ -19,8 +19,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 @Config
-@Autonomous(name = "BLUE_TEST_AUTO_PIXEL", group = "Autonomous")
-public class ExampleAuto extends LinearOpMode {
+@Autonomous(name = "BlueBucketAuto", group = "Autonomous")
+public class BlueBucketAuto extends LinearOpMode {
     public class Lift {
         private DcMotorEx lift;
 
@@ -109,32 +109,24 @@ public class ExampleAuto extends LinearOpMode {
         }
     }
 
+
+    //Close the Claw: The robot starts by closing its claw to hold onto something (probably a game element)
+    //Wait for Start: The robot waits for the match to begin and checks its starting position using vision.
+    //Move to a Location: Based on the starting position detected by the vision system, the robot selects a path and drives to a specific location on the field.
+    //Lift the Slide: The robot raises its lift (probably to place an object on a higher level).
+    //Open the Claw: After lifting, the robot opens the claw to release the object it was holding.
+    //Lower the Slide: Once the object is placed, the robot lowers the lift back down.
+    //Move to a Final Location: Finally, the robot drives to another location to complete the autonomous routine, getting ready for the next phase of the match.
     @Override
     public void runOpMode() {
-
-
-        //Close the Claw: The robot starts by closing its claw to hold onto something (probably a game element)
-        //Wait for Start: The robot waits for the match to begin and checks its starting position using vision.
-        //Move to a Location: Based on the starting position detected by the vision system, the robot selects a path and drives to a specific location on the field.
-        //Lift the Slide: The robot raises its lift (probably to place an object on a higher level).
-        //Open the Claw: After lifting, the robot opens the claw to release the object it was holding.
-        //Lower the Slide: Once the object is placed, the robot lowers the lift back down.
-        //Move to a Final Location: Finally, the robot drives to another location to complete the autonomous routine, getting ready for the next phase of the match.
-
 
         MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(11.8, 61.7, Math.toRadians(90)));
         Claw claw = new Claw(hardwareMap);
         Lift lift = new Lift(hardwareMap);
 
-        // vision here that outputs position
-        int visionOutputPosition = 1;
+        Action trajectoryAction, trajectoryActionCloseOut;
 
-        Action trajectoryAction1;
-        Action trajectoryAction2;
-        Action trajectoryAction3;
-        Action trajectoryActionCloseOut;
-
-        trajectoryAction1 = drive.actionBuilder(drive.pose)
+        trajectoryAction = drive.actionBuilder(drive.pose)
                 .lineToYSplineHeading(33, Math.toRadians(0))
                 .waitSeconds(2)
                 .setTangent(Math.toRadians(90))
@@ -146,59 +138,61 @@ public class ExampleAuto extends LinearOpMode {
                 .lineToX(47.5)
                 .waitSeconds(3)
                 .build();
-        trajectoryAction2 = drive.actionBuilder(drive.pose)
-                .lineToY(37)
-                .setTangent(Math.toRadians(0))
-                .lineToX(18)
-                .waitSeconds(3)
-                .setTangent(Math.toRadians(0))
-                .lineToXSplineHeading(46, Math.toRadians(180))
-                .waitSeconds(3)
-                .build();
-        trajectoryAction3 = drive.actionBuilder(drive.pose)
-                .lineToYSplineHeading(33, Math.toRadians(180))
-                .waitSeconds(2)
-                .strafeTo(new Vector2d(46, 30))
-                .waitSeconds(3)
-                .build();
         trajectoryActionCloseOut = drive.actionBuilder(drive.pose)
                 .strafeTo(new Vector2d(48, 12))
                 .build();
 
+        Action driveToSub, driveToFirstSample;
+
+        driveToSub = drive.actionBuilder(drive.pose)
+                .lineToYSplineHeading(33, Math.toRadians(0))
+                .waitSeconds(0) //set to wait for length of lift raise, or maybe leave at 0 - likely latter
+                .build();
+        driveToFirstSample = drive.actionBuilder(drive.pose)
+                .setTangent(Math.toRadians(90))
+                .lineToY(48)
+                .setTangent(Math.toRadians(0))
+                .lineToX(32)
+                .strafeTo(new Vector2d(44.5, 30))
+                .turn(Math.toRadians(180))
+                .lineToX(47.5)
+                .waitSeconds(0) //set to wait for claw close, or maybe leave at 0 - likely latter
+                .build();
+
+
         // actions that need to happen on init; for instance, a claw tightening.
         Actions.runBlocking(claw.closeClaw());
 
-
-        while (!isStopRequested() && !opModeIsActive()) {
-            int position = visionOutputPosition;
-            telemetry.addData("Position during Init", position);
-            telemetry.update();
-        }
-
-        int startPosition = visionOutputPosition;
-        telemetry.addData("Starting Position", startPosition);
-        telemetry.update();
-        waitForStart();
-
         if (isStopRequested()) return;
 
-        Action trajectoryActionChosen;
-        if (startPosition == 1) {
-            trajectoryActionChosen = trajectoryAction1;
-        } else if (startPosition == 2) {
-            trajectoryActionChosen = trajectoryAction2;
-        } else {
-            trajectoryActionChosen = trajectoryAction3;
-        }
-
         Actions.runBlocking(
+                /*
                 new SequentialAction(
-                        trajectoryActionChosen,
+                        trajectoryAction,
                         lift.liftUp(),
                         claw.openClaw(),
                         lift.liftDown(),
                         trajectoryActionCloseOut
-                )
+                )*/
+                new SequentialAction(
+
+                        //drive to sub
+                        driveToSub,
+
+                        //lift slide, drop sample, lower slide
+                        lift.liftUp(),
+                        claw.openClaw(),
+                        lift.liftDown(),
+
+                        //drive to first sample
+                        driveToFirstSample)
+
+                        //pick up sample, close claw
+
+
+
+
+
         );
     }
 }
