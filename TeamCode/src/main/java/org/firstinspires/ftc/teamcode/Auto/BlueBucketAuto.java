@@ -21,13 +21,20 @@ import com.qualcomm.robotcore.hardware.Servo;
 @Config
 @Autonomous(name = "BlueBucketAuto", group = "Autonomous")
 public class BlueBucketAuto extends LinearOpMode {
+
+    /*
     public class Lift {
-        private DcMotorEx lift;
+        private DcMotorEx lift1;
+        private DcMotorEx lift2;
 
         public Lift(HardwareMap hardwareMap) {
-            lift = hardwareMap.get(DcMotorEx.class, "liftMotor");
-            lift.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            lift.setDirection(DcMotorSimple.Direction.FORWARD);
+            lift1 = hardwareMap.get(DcMotorEx.class, "liftMotor1");
+            lift2 = hardwareMap.get(DcMotorEx.class, "liftMotor2");
+            lift1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            lift2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            lift1.setDirection(DcMotorSimple.Direction.FORWARD);
+            lift2.setDirection(DcMotorSimple.Direction.FORWARD);
+
         }
 
         public class LiftUp implements Action {
@@ -36,16 +43,24 @@ public class BlueBucketAuto extends LinearOpMode {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
                 if (!initialized) {
-                    lift.setPower(0.8);
+                    System.out.println("Going up!");
+                    lift1.setPower(0.8);
+                    lift2.setPower(-0.8);
+
                     initialized = true;
                 }
 
-                double pos = lift.getCurrentPosition();
-                packet.put("liftPos", pos);
-                if (pos < 3000.0) {
+                double pos1 = lift1.getCurrentPosition();
+                double pos2 = lift2.getCurrentPosition();
+
+                packet.put("liftPos1", pos1);
+                packet.put("liftPos2", pos2);
+
+                if (pos1 < 3000.0 & pos2 < 3000.0) {
                     return true;
                 } else {
-                    lift.setPower(0);
+                    lift1.setPower(0);
+                    lift2.setPower(0);
                     return false;
                 }
             }
@@ -60,16 +75,23 @@ public class BlueBucketAuto extends LinearOpMode {
             @Override
             public boolean run(@NonNull TelemetryPacket packet) {
                 if (!initialized) {
-                    lift.setPower(-0.8);
+                    lift1.setPower(-0.8);
+                    lift2.setPower(0.8);
                     initialized = true;
                 }
 
-                double pos = lift.getCurrentPosition();
-                packet.put("liftPos", pos);
-                if (pos > 100.0) {
+                double pos1 = lift1.getCurrentPosition();
+                double pos2 = lift2.getCurrentPosition();
+
+                packet.put("liftPos1", pos1);
+                packet.put("liftPos2", pos2);
+
+                if (pos1 > 100.0 & pos2 > 100.0) {
                     return true;
                 } else {
-                    lift.setPower(0);
+                    lift1.setPower(0);
+                    lift2.setPower(0);
+
                     return false;
                 }
             }
@@ -78,7 +100,10 @@ public class BlueBucketAuto extends LinearOpMode {
             return new LiftDown();
         }
     }
+    */
 
+
+    /*
     public class Claw {
         private Servo claw;
 
@@ -108,7 +133,7 @@ public class BlueBucketAuto extends LinearOpMode {
             return new OpenClaw();
         }
     }
-
+    */
 
     //Close the Claw: The robot starts by closing its claw to hold onto something (probably a game element)
     //Wait for Start: The robot waits for the match to begin and checks its starting position using vision.
@@ -117,38 +142,22 @@ public class BlueBucketAuto extends LinearOpMode {
     //Open the Claw: After lifting, the robot opens the claw to release the object it was holding.
     //Lower the Slide: Once the object is placed, the robot lowers the lift back down.
     //Move to a Final Location: Finally, the robot drives to another location to complete the autonomous routine, getting ready for the next phase of the match.
+
     @Override
     public void runOpMode() {
 
         MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(11.8, 61.7, Math.toRadians(90)));
-        Claw claw = new Claw(hardwareMap);
-        Lift lift = new Lift(hardwareMap);
-
-        Action trajectoryAction, trajectoryActionCloseOut;
-
-        trajectoryAction = drive.actionBuilder(drive.pose)
-                .lineToYSplineHeading(33, Math.toRadians(0))
-                .waitSeconds(2)
-                .setTangent(Math.toRadians(90))
-                .lineToY(48)
-                .setTangent(Math.toRadians(0))
-                .lineToX(32)
-                .strafeTo(new Vector2d(44.5, 30))
-                .turn(Math.toRadians(180))
-                .lineToX(47.5)
-                .waitSeconds(3)
-                .build();
-        trajectoryActionCloseOut = drive.actionBuilder(drive.pose)
-                .strafeTo(new Vector2d(48, 12))
-                .build();
+        //Claw claw = new Claw(hardwareMap);
+        //Lift lift = new Lift(hardwareMap); //lifts work,
 
         Action driveToSub, driveToFirstSample;
 
         driveToSub = drive.actionBuilder(drive.pose)
+                .strafeTo(new Vector2d(48, 12))
                 .lineToYSplineHeading(33, Math.toRadians(0))
                 .waitSeconds(0) //set to wait for length of lift raise, or maybe leave at 0 - likely latter
                 .build();
-        driveToFirstSample = drive.actionBuilder(drive.pose)
+        /*driveToFirstSample = drive.actionBuilder(drive.pose)
                 .setTangent(Math.toRadians(90))
                 .lineToY(48)
                 .setTangent(Math.toRadians(0))
@@ -157,42 +166,24 @@ public class BlueBucketAuto extends LinearOpMode {
                 .turn(Math.toRadians(180))
                 .lineToX(47.5)
                 .waitSeconds(0) //set to wait for claw close, or maybe leave at 0 - likely latter
-                .build();
+                .build();*/
 
 
         // actions that need to happen on init; for instance, a claw tightening.
-        Actions.runBlocking(claw.closeClaw());
+        //Actions.runBlocking(claw.closeClaw());
 
-        if (isStopRequested()) return;
+        while (!isStarted() && isStopRequested()) telemetry.update();
 
-        Actions.runBlocking(
-                /*
-                new SequentialAction(
-                        trajectoryAction,
-                        lift.liftUp(),
-                        claw.openClaw(),
-                        lift.liftDown(),
-                        trajectoryActionCloseOut
-                )*/
-                new SequentialAction(
+        waitForStart();
 
-                        //drive to sub
-                        driveToSub,
-
-                        //lift slide, drop sample, lower slide
-                        lift.liftUp(),
-                        claw.openClaw(),
-                        lift.liftDown(),
-
-                        //drive to first sample
-                        driveToFirstSample)
-
-                        //pick up sample, close claw
-
-
-
-
-
-        );
+        while (opModeIsActive()) {
+            Actions.runBlocking(
+                    new SequentialAction(
+                            driveToSub
+                            //lift.liftUp(),
+                            //lift.liftDown()
+                    )
+            );
+        }
     }
 }
