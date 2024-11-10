@@ -126,7 +126,7 @@ public class mainOpMode extends OpMode
 
         liftMotor1.setDirection(DcMotor.Direction.FORWARD);
         liftMotor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        liftMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        liftMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER); //RUN_TO_POSITION
 
         liftMotor2.setDirection(DcMotor.Direction.REVERSE);
         liftMotor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -229,6 +229,9 @@ public class mainOpMode extends OpMode
 
         //GAMEPAD 2 - Primary: Lift(Motors & Appendages)
         //START LIFT
+        //targetPosition1 = liftMotor1.getCurrentPosition();
+        //targetPosition2 = liftMotor2.getCurrentPosition();
+
         if (gamepad2.right_stick_y > 0.8) { //if stick is forward
             liftMotor1.setPower(0.8);
             liftMotor2.setPower(0.8);
@@ -236,8 +239,8 @@ public class mainOpMode extends OpMode
             liftMotor1.setPower(-0.6);
             liftMotor2.setPower(-0.6);
         } else { //idle, leave as 0 for now
-            liftMotor1.setPower(0.1);
-            liftMotor2.setPower(0.1);
+            liftMotor1.setPower(0.2);
+            liftMotor2.setPower(0.2);
         }
 
         /*    23-24 lift pos aware code
@@ -287,9 +290,9 @@ public class mainOpMode extends OpMode
 
         // - rotate arm (trigger - left: rotate arm downward and hold, - right: rotate arm upward and hold)
         if (gamepad2.left_bumper) {
-            liftClawRotate_Arm.setPosition(0); //idk positions
+            liftClawRotate_Arm.setPosition(0.5); //idk positions
         } else if (gamepad2.right_bumper) {
-            liftClawRotate_Arm.setPosition(.5); //idk positions
+            liftClawRotate_Arm.setPosition(1); //idk positions
         } //right rotates to floor, left rotates back up
 
         // - arm extender (left stick to extend/retract) WORKS, X Y
